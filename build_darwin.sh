@@ -2,21 +2,10 @@
 
 set -eux
 
-# Install dependencies
-if [ "$(uname)" = "Linux" ]; then
-    apk add alpine-sdk zlib-dev zlib-static zstd-dev zstd-static
-    export EXTRA_LDFLAGS=-static
-    njobs="$(nproc)"
-    appimage_arch="$(apk --print-arch)"
-
-else
-    # No static builds for MacOS...
-    brew install squashfs
-    export EXTRA_CFLAGS=-std=gnu89
-    njobs="$(sysctl -n hw.logicalcpu)"
-    appimage_arch="$(/usr/bin/arch)"
-
-fi
+brew install squashfs
+export EXTRA_CFLAGS=-std=gnu89
+njobs="$(sysctl -n hw.logicalcpu)"
+appimage_arch="$(/usr/bin/arch)"
 
 # Build static squashfs-tools
 squashfs_version="4.6.1"

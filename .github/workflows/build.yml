@@ -16,40 +16,38 @@ env:
 jobs:
   build-linux:
     runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        arch: [aarch64, armv7, i686, x86_64]
-
     steps:
       - uses: actions/checkout@v3
 
-      - name: Build
-        uses: lalten/run-on-arch-action@amd64-support # should be switched to `uraimo/run-on-arch-action@v2` when https://github.com/uraimo/run-on-arch-action/pull/94 is merged
-        with:
-          arch: ${{ matrix.arch }}
-          distro: alpine_latest
-          dockerRunArgs: --volume "${PWD}/out:/out"
-          run: ./build.sh
+      - run: docker buildx create --driver docker-container --use
+      - run: >
+          docker buildx build
+          --platform=linux/x86_64,linux/i386,linux/aarch64,linux/arm/v7
+          --target artifact
+          -o out
+          --cache-to type=gha
+          --cache-from type=gha
+          --file Dockerfile.linux
+          .
 
       - uses: actions/upload-artifact@v3
         with:
-          name: ubuntu
-          path: ./out/*
+          name: linux
+          path: out/*
 
 
-  build-mac:
+  build-darwin:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v3
-      - run: ./build.sh
+      - run: ./build_darwin.sh
       - uses: actions/upload-artifact@v3
         with:
-          name: macos
+          name: darwin
           path: ./out/*
 
   release:
-    needs: [build-linux, build-mac]
+    needs: [build-linux, build-darwin]
     runs-on: ubuntu-latest
     permissions: write-all
     steps:
