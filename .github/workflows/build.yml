@@ -37,10 +37,13 @@ jobs:
 
 
   build-darwin:
-    runs-on: macos-latest
+    runs-on: macos-13 
     steps:
-      - uses: actions/checkout@v3
-      - run: ./build_darwin.sh
+      - run: |
+          curl -fsSL http://packages.macports.org/squashfs-tools/squashfs-tools-4.5_1.darwin_22.x86_64.tbz2 | tar -xj
+          mkdir -p out
+          cp opt/local/bin/mksquashfs out/mksquashfs-4.5.1-darwin_22-x86_64
+          cp opt/local/bin/unsquashfs out/unsquashfs-4.5.1-darwin_22-x86_64
       - uses: actions/upload-artifact@v3
         with:
           name: darwin
