@@ -61,7 +61,7 @@ jobs:
           version="$(date --utc +%Y-%m-%d)-${{ github.event.pull_request.head.sha || github.sha }}"
           tag="build-${version}"
           if gh release view "${tag}" > /dev/null; then
-            gh release upload "${tag}" **/*
+            find out -type f | xargs gh release upload "${tag}"
           else
-            gh release create --prerelease --title "Build ${version}" "${tag}" **/*
+            find out -type f | gh release create --prerelease --title "Build ${version}" "${tag}"
           fi
