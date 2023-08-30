@@ -53,7 +53,7 @@ jobs:
     steps:
       - uses: actions/download-artifact@v3
       - name: Create Release
-        if: github.ref_name == 'master'
+        if: github.ref_name == 'main'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
