@@ -1,0 +1,32 @@
+FROM --platform=$BUILDPLATFORM tonistiigi/xx AS xx
+
+FROM --platform=$BUILDPLATFORM alpine:latest as build
+COPY --from=xx / /
+ARG TARGETPLATFORM
+
+RUN apk add alpine-sdk clang llvm
+ENV CC="xx-clang"
+
+RUN xx-apk add gcc musl-dev zlib-dev zlib-static zstd-dev zstd-static
+ENV squashfs_version="4.6.1"
+ENV EXTRA_LDFLAGS="-static"
+RUN curl -fsSL "https://github.com/plougher/squashfs-tools/archive/refs/tags/${squashfs_version}.tar.gz" \
+    | tar xz --strip-components=1 "squashfs-tools-${squashfs_version}/squashfs-tools" && \
+    cd squashfs-tools && \
+    sed -i -e 's|#ZSTD_SUPPORT = 1|ZSTD_SUPPORT = 1|g' Makefile
+RUN cd squashfs-tools && \
+    make -j && \
+    "$(xx-info)-strip" mksquashfs && \
+    xx-verify --static mksquashfs
+
+
+RUN appimage_arch="$(xx-info march)" && \
+    echo "$appimage_arch" | grep -q armv && appimage_arch=armhf; \
+    [ "$appimage_arch" = "x86" ] && appimage_arch=i686; \
+    mkdir out && \
+    cp squashfs-tools/mksquashfs "out/mksquashfs-${squashfs_version}-$(uname)-${appimage_arch}" && \
+    cp squashfs-tools/unsquashfs "out/unsquashfs-${squashfs_version}-$(uname)-${appimage_arch}"
+
+FROM scratch as artifact
+COPY --from=build /out/* /
+FROM build as release
